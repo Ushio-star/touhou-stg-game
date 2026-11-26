@@ -11,7 +11,7 @@
 - [x] 步骤 2：让圆点动起来（游戏主循环）（`dev/step2_moving_dot.py`）
 - [x] 步骤 3：用 WASD 控制移动（按键集合 + 边界）（`dev/step3_wasd_move.py`）
 - [x] 步骤 4：把圆点重构成 Player 类（认识 class / self / __init__）（`dev/step4_player_class.py`）
-- [ ] 步骤 5：抽象基类 Entity + 继承（40 分核心）
+- [x] 步骤 5：抽象基类 Entity + 继承（40 分核心）
 - [ ] 步骤 6：玩家射击 + 子弹飞行
 - [ ] 步骤 7：Boss + 弹幕 + 符卡
 - [ ] 步骤 8：判定点 / 死亡 / Bomb / 擦弹 / 结算

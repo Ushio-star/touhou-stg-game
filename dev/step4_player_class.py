@@ -2,10 +2,21 @@
 # 步骤 4：把圆点重构成 Player 类
 # 目标：认识 class（类）、self、__init__（初始化）
 # ============================================
+from abc import ABC, abstractmethod
 import tkinter as tk
 
 
-class Player:
+class Entity(ABC):                     # ABC = Abstract Base Class（抽象基类）
+    @abstractmethod                    # 标签：下面这个方法是"抽象的"（只定名字，不写内容）
+    def update(self):
+        pass                           # pass = "占个位，啥也不做"
+
+    @abstractmethod
+    def draw(self, canvas):
+        pass
+
+
+class Player(Entity):
     """玩家类（一张"图纸"）"""
 
     def __init__(self, x, y):
