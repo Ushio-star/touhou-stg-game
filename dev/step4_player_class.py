@@ -1,6 +1,6 @@
 # ============================================
-# 步骤 4：把圆点重构成 Player 类
-# 目标：认识 class（类）、self、__init__（初始化）
+# 步骤 6：玩家 + 子弹 + Game 类（统一管理）
+# 目标：抽象基类 Entity、Player/Bullet 继承、Game 类统一"清屏->update->draw"
 # ============================================
 from abc import ABC, abstractmethod
 import tkinter as tk
@@ -43,34 +43,63 @@ class Player(Entity):
                            fill="red")
 
 
-# ---- 下面是"使用"这张图纸 ----
+class Bullet(Entity):
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.radius = 3
+        self.alive = True        # 子弹"活着"吗？（飞出屏幕就"死"）
+
+    def update(self):
+        self.y -= 6              # 往上飞
+        if self.y < -10:
+            self.alive = False   # 飞出屏幕顶部，标记"死亡"
+
+    def draw(self, canvas):
+        canvas.create_oval(self.x - self.radius, self.y - self.radius,
+                           self.x + self.radius, self.y + self.radius,
+                           fill="white")
+
+
+class Game:
+    def __init__(self, root):
+        self.root = root
+        self.canvas = tk.Canvas(root, width=480, height=640, bg="#000011", highlightthickness=0)
+        self.canvas.pack()
+        self.player = Player(240, 320)
+        self.bullets = []            # 存放所有子弹
+        self.keys = set()
+        self.root.bind("<KeyPress>", self.on_press)
+        self.root.bind("<KeyRelease>", self.on_release)
+        self.game_loop()             # 启动循环
+
+    def on_press(self, event):
+        self.keys.add(event.keysym)
+        if event.keysym == "z":      # 按 Z 键发射一颗子弹
+            self.bullets.append(Bullet(self.player.x, self.player.y - 10))
+
+    def on_release(self, event):
+        self.keys.discard(event.keysym)
+
+    def update(self):
+        self.player.update(self.keys)
+        for b in self.bullets:
+            b.update()
+        self.bullets = [b for b in self.bullets if b.alive]   # 清理"死"子弹（防止内存泄漏）
+
+    def draw(self):
+        self.player.draw(self.canvas)
+        for b in self.bullets:
+            b.draw(self.canvas)
+
+    def game_loop(self):
+        self.canvas.delete("all")    # ① 先清屏
+        self.update()                # ② 统一 update
+        self.draw()                  # ③ 统一 draw
+        self.root.after(16, self.game_loop)
+
+
 root = tk.Tk()
-root.title("类版本的玩家")
-canvas = tk.Canvas(root, width=480, height=640, bg="#000011", highlightthickness=0)
-canvas.pack()
-
-player = Player(240, 320)        # 照着图纸，造出一个玩家对象（实例）
-keys = set()
-
-
-def on_press(event):
-    keys.add(event.keysym)
-
-
-def on_release(event):
-    keys.discard(event.keysym)
-
-
-root.bind("<KeyPress>", on_press)
-root.bind("<KeyRelease>", on_release)
-
-
-def game_loop():
-    canvas.delete("all")
-    player.update(keys)           # 让玩家自己更新（移动）
-    player.draw(canvas)           # 让玩家自己画出来
-    root.after(16, game_loop)
-
-
-game_loop()
+root.title("玩家 + 子弹")
+game = Game(root)
 root.mainloop()
