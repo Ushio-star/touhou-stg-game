@@ -73,9 +73,10 @@ class Game:
         self.root.bind("<KeyPress>", self.on_press)
         self.root.bind("<KeyRelease>", self.on_release)
         self.game_loop()             # 启动循环（必须放在所有属性初始化之后！）
+
     def on_press(self, event):
         self.keys.add(event.keysym)
-       
+
     def on_release(self, event):
         self.keys.discard(event.keysym)
 
