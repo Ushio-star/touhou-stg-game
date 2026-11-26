@@ -38,6 +38,11 @@ def game_loop():
     if "Up" in keys or "w" in keys:    y -= SPEED   # 上
     if "Down" in keys or "s" in keys:  y += SPEED   # 下
 
+    x = max(10, x)
+    x = min(470, x)
+    y = max(10, y)
+    y = min(630, y)
+    
     # ③ 重新画圆
     canvas.create_oval(x-10, y-10, x+10, y+10, fill="red")
     root.after(16, game_loop)                # ④ 16 毫秒后再来
