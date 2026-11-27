@@ -481,7 +481,12 @@ class Game:
 
         # HUD：擦弹 + 炸弹
         self.canvas.create_text(10, 40, anchor="nw", text=f"擦弹: {self.graze}", fill="white")
-        self.canvas.create_text(10, 60, anchor="nw", text=f"Bomb: {self.bomb_count}", fill="white")
+        if self.bomb_cooldown > 0:
+            self.canvas.create_text(10, 60, anchor="nw",
+                                    text=f"Bomb: {self.bomb_count}（冷却 {(self.bomb_cooldown + 59) // 60}s）",
+                                    fill="#888888")
+        else:
+            self.canvas.create_text(10, 60, anchor="nw", text=f"Bomb: {self.bomb_count}", fill="white")
         self.canvas.create_text(10, 80, anchor="nw", text=f"时间: {self.elapsed_frames // 60}s", fill="white")
 
         if self.game_state == "win":
