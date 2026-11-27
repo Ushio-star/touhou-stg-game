@@ -287,6 +287,28 @@ class DenseSpellCard(SpellCard):
                 angle = sweep + i * math.pi / 12  # 空2：sweep + 偏移
                 enemy_bullets.append(EnemyBullet(boss.x, boss.y, angle, speed=3))
 
+class Item(Entity):
+    """掉落道具：不同类型有不同效果"""
+
+    def __init__(self, x, y, kind):
+        self.x = x
+        self.y = y
+        self.size = 10
+        self.alive = True
+        self.kind = kind   # "shield" / "speed" / "bomb"
+
+    def update(self):
+        self.y += 2              # 缓慢下落
+        if self.y > 660:
+            self.alive = False
+
+    def draw(self, canvas):
+        color = {"shield": "#44ccff", "speed": "#ffaa00", "bomb": "#00ff88"}[self.kind]
+        canvas.create_rectangle(self.x - self.size, self.y - self.size,
+                                self.x + self.size, self.y + self.size,
+                                fill=color, outline="white")
+
+
 class Game:
     def __init__(self, root):
         self.root = root
@@ -302,6 +324,16 @@ class Game:
         self.bomb_count = 2           # 剩余炸弹数
         self.invincible_timer = 0     # 无敌帧数
         self.bomb_cooldown = 0        # 冷却帧数
+        self.graze = 0                # 擦弹得分
+        self.items = []               # 掉落道具列表
+        self.shield = False           # 护盾（一次性免伤）
+        self.speed_boost_timer = 0    # 攻速加成剩余帧数
+        # 掉道具阈值 = Boss 最大血量的 75% / 50% / 25%（按百分比算，可自定义）
+        self.drop_thresholds = [int(self.boss.max_hp * 0.75),
+                                int(self.boss.max_hp * 0.50),
+                                int(self.boss.max_hp * 0.25)]
+        self.drop_kinds = ["shield", "speed", "bomb"]
+        self.drop_index = 0
         self.root.bind("<KeyPress>", self.on_press)
         self.root.bind("<KeyRelease>", self.on_release)
         self.game_loop()             # 启动循环（必须放在所有属性初始化之后！）
@@ -331,13 +363,16 @@ class Game:
             self.invincible_timer -= 1
         if self.bomb_cooldown > 0:
             self.bomb_cooldown -= 1
+        if self.speed_boost_timer > 0:
+            self.speed_boost_timer -= 1
 
         self.player.update(self.keys)
         self.boss.update(self.player, self.enemy_bullets)
 
         # ---- 按住 空格 连发：每 8 帧发一颗（冷却计时器）----
+        fire_interval = 4 if self.speed_boost_timer > 0 else 8   # 攻速加成时射击间隔减半
         self.fire_timer += 1
-        if "space" in self.keys and self.fire_timer >= 8:
+        if "space" in self.keys and self.fire_timer >= fire_interval:
             self.fire_timer = 0
             self.bullets.append(Bullet(self.player.x, self.player.y - 15, thin=self.player.slow))
 
@@ -353,6 +388,11 @@ class Game:
                 self.boss.hp = max(0, self.boss.hp - 50)     # Boss 掉 50 血（最低到 0）
                 if self.boss.hp <= 0:          # Boss 血条归零 → 胜利
                     self.game_state = "win"
+                # 掉道具：血条低于阈值且还有道具没掉
+                if (self.drop_index < len(self.drop_thresholds)
+                        and self.boss.hp <= self.drop_thresholds[self.drop_index]):
+                    self.items.append(Item(self.boss.x, self.boss.y, self.drop_kinds[self.drop_index]))
+                    self.drop_index += 1
 
         self.bullets = [b for b in self.bullets if b.alive]
 
@@ -371,6 +411,10 @@ class Game:
             if dx*dx + dy*dy < (eb.hitbox_radius + self.player.hitbox_radius) ** 2:
                 if self.invincible_timer > 0:      # 无敌：子弹穿过，不扣血
                     continue
+                if self.shield:                    # 护盾：免伤 + 清弹幕（不死亡）
+                    self.shield = False
+                    self.enemy_bullets.clear()
+                    break
                 self.player.hp -= 1
                 if self.player.hp <= 0:        # 无剩余生命 → 失败
                     self.game_state = "lose"
@@ -382,6 +426,30 @@ class Game:
                 self.bullets.clear()              # 清空玩家子弹
                 break
           
+        # ---- 擦弹判定：与视觉模型重合但没中判定点 ----
+        for eb in self.enemy_bullets:
+            dx = eb.x - self.player.x
+            dy = eb.y - self.player.y
+            dist2 = dx*dx + dy*dy
+            if (eb.hitbox_radius + self.player.hitbox_radius) ** 2 <= dist2 < (eb.radius + self.player.radius) ** 2:
+                self.graze += 1
+
+        # ---- 道具：更新 + 玩家拾取 ----
+        for it in self.items:
+            it.update()
+        for it in self.items:
+            dx = it.x - self.player.x
+            dy = it.y - self.player.y
+            if dx*dx + dy*dy < (it.size + self.player.radius) ** 2:
+                it.alive = False
+                if it.kind == "shield":
+                    self.shield = True
+                elif it.kind == "speed":
+                    self.speed_boost_timer = 180
+                elif it.kind == "bomb":
+                    self.bomb_count += 1
+        self.items = [it for it in self.items if it.alive]
+
         self.enemy_bullets = [eb for eb in self.enemy_bullets if eb.alive]
 
     def draw(self):
@@ -404,6 +472,14 @@ class Game:
         self.canvas.create_text(470, 30, anchor="ne",
                                 text=self.boss.spell_name,
                                 fill="white", font=("Arial", 14, "bold"))
+        # 画掉落道具
+        for it in self.items:
+            it.draw(self.canvas)
+
+        # HUD：擦弹 + 炸弹
+        self.canvas.create_text(10, 40, anchor="nw", text=f"擦弹: {self.graze}", fill="white")
+        self.canvas.create_text(10, 60, anchor="nw", text=f"Bomb: {self.bomb_count}", fill="white")
+
         if self.game_state == "win":
             self.canvas.create_text(240, 320, text="Stage Clear",
                                     fill="#ffcc00", font=("Arial", 40, "bold"))
