@@ -1,9 +1,10 @@
 # ============================================
-# 步骤 7：Boss + 血条（进行中）
+# 步骤 7：Boss + 血条
 # 目标：Boss 类继承 Entity、左右平滑移动、顶部血条
 # ============================================
 from abc import ABC, abstractmethod
 import tkinter as tk
+import math
 
 
 class Entity(ABC):                     # ABC = Abstract Base Class（抽象基类）
@@ -40,7 +41,7 @@ class Player(Entity):
         """把玩家画到画布上"""
         canvas.create_oval(self.x - self.radius, self.y - self.radius,
                            self.x + self.radius, self.y + self.radius,
-                           fill="red")
+                           fill="#2563A4")
 
 
 class Bullet(Entity):
@@ -61,12 +62,36 @@ class Bullet(Entity):
                            fill="white")
 
 
+class Boss(Entity):
+    """Boss 类（敌人，也继承 Entity）"""
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.radius = 30
+        self.hp = 1000          # 当前血量
+        self.max_hp = 1000      # 最大血量
+        self.alive = True
+        self.timer = 0          # 移动计时器
+
+    def update(self):
+        self.timer += 1
+        # 中心 240，左右幅度 150（最左 90，最右 390）；sin 让移动平滑
+        self.x = 240 + 150 * math.sin(self.timer * 0.03)
+
+    def draw(self, canvas):
+        canvas.create_oval(self.x - self.radius, self.y - self.radius,
+                           self.x + self.radius, self.y + self.radius,
+                           fill="#b831ba")
+
+
 class Game:
     def __init__(self, root):
         self.root = root
         self.canvas = tk.Canvas(root, width=480, height=640, bg="#000011", highlightthickness=0)
         self.canvas.pack()
         self.player = Player(240, 320)
+        self.boss = Boss(240, 100)
         self.bullets = []            # 存放所有子弹
         self.fire_timer = 0          # 发射冷却计时器
         self.keys = set()            # 当前按着的键
@@ -82,6 +107,7 @@ class Game:
 
     def update(self):
         self.player.update(self.keys)
+        self.boss.update()
 
         # ---- 按住 空格 连发：每 4 帧发一颗（冷却计时器）----
         self.fire_timer += 1
@@ -97,6 +123,14 @@ class Game:
         self.player.draw(self.canvas)
         for b in self.bullets:
             b.draw(self.canvas)
+        self.boss.draw(self.canvas)
+
+        # ---- 顶部 Boss 血条 ----
+        # 背景条（深灰，固定 400 宽）
+        self.canvas.create_rectangle(40, 10, 440, 24, fill="#444444", outline="white")
+        # 前景条（红色，宽度随血量变短）
+        ratio = self.boss.hp / self.boss.max_hp
+        self.canvas.create_rectangle(40, 10, 40 + 400 * ratio, 24, fill="#ff4444", outline="")
 
     def game_loop(self):
         self.canvas.delete("all")    # ① 先清屏
@@ -106,6 +140,6 @@ class Game:
 
 
 root = tk.Tk()
-root.title("玩家 + 子弹")
+root.title("Boss 关")
 game = Game(root)
 root.mainloop()
