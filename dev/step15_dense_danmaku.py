@@ -98,7 +98,7 @@ class Boss(Entity):
         self.alive = True
         self.timer = 0          # 移动计时器
         # 符卡系统
-        self.spell_cards = [AimSpellCard(), CircleSpellCard(), SplitSpellCard(), BigBulletSpellCard()]
+        self.spell_cards = [AimSpellCard(), CircleSpellCard(), SplitSpellCard(),BigBulletSpellCard(), DenseSpellCard()]
         self.current = 0                        # 当前符卡下标
         self.spell_name = self.spell_cards[0].name
 
@@ -268,6 +268,24 @@ class BigBulletSpellCard(SpellCard):
             dy = player.y - boss.y
             angle = math.atan2(dy, dx)                  # 空2：瞄准玩家的角度
             enemy_bullets.append(BigBullet(boss.x, boss.y, angle, speed=1.5))
+
+class DenseSpellCard(SpellCard):
+    """符卡5：高密度扇形扫射（变向演出）"""
+
+    def __init__(self):
+        super().__init__("高密度「扇形扫射」", duration=300)
+        self.fire_timer = 0
+
+    def update(self, boss, player, enemy_bullets):
+        super().update(boss, player, enemy_bullets)
+        self.fire_timer += 1
+        # 扫射中心角度：朝下（pi/2），左右来回摆动 = 变向
+        sweep = math.pi / 2 + math.sin(self.timer * 0.04) * 0.7  # 空1：朝下 + 左右摆动
+        if self.fire_timer >= 4:            # 每 4 帧一波（高密度）
+            self.fire_timer = 0
+            for i in range(-7, 8):          # 15 发铺成扇形
+                angle = sweep + i * math.pi / 12  # 空2：sweep + 偏移
+                enemy_bullets.append(EnemyBullet(boss.x, boss.y, angle, speed=3))
 
 class Game:
     def __init__(self, root):
