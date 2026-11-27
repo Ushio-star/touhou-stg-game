@@ -299,12 +299,17 @@ class Game:
         self.enemy_bullets = []      # 存放敌方子弹
         self.keys = set()            # 当前按着的键
         self.game_state = "playing"
+        self.bomb_count = 2           # 剩余炸弹数
+        self.invincible_timer = 0     # 无敌帧数
+        self.bomb_cooldown = 0        # 冷却帧数
         self.root.bind("<KeyPress>", self.on_press)
         self.root.bind("<KeyRelease>", self.on_release)
         self.game_loop()             # 启动循环（必须放在所有属性初始化之后！）
 
     def on_press(self, event):
         self.keys.add(event.keysym)
+        if event.keysym.lower() == "x":   # 按 X 触发 Bomb（大小写都认）
+            self.try_bomb()
 
     def on_release(self, event):
         key = event.keysym
@@ -313,7 +318,20 @@ class Game:
             self.keys.discard(key.lower())
             self.keys.discard(key.upper())
 
+    def try_bomb(self):
+        if self.bomb_count > 0 and self.bomb_cooldown == 0:
+            self.bomb_count -= 1
+            self.enemy_bullets.clear()      # 清屏所有敌弹
+            self.invincible_timer = 180     # 3 秒无敌
+            self.bomb_cooldown = 600        # 10 秒冷却
+
     def update(self):
+        # 递减无敌和冷却计时
+        if self.invincible_timer > 0:
+            self.invincible_timer -= 1
+        if self.bomb_cooldown > 0:
+            self.bomb_cooldown -= 1
+
         self.player.update(self.keys)
         self.boss.update(self.player, self.enemy_bullets)
 
@@ -351,6 +369,8 @@ class Game:
             dx = eb.x - self.player.x
             dy = eb.y - self.player.y
             if dx*dx + dy*dy < (eb.hitbox_radius + self.player.hitbox_radius) ** 2:
+                if self.invincible_timer > 0:      # 无敌：子弹穿过，不扣血
+                    continue
                 self.player.hp -= 1
                 if self.player.hp <= 0:        # 无剩余生命 → 失败
                     self.game_state = "lose"
