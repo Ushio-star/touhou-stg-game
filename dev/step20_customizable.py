@@ -202,6 +202,14 @@ class EnemyBullet(Entity):
         self.vy = math.sin(angle) * speed     # 空2：sin(angle) * speed
         self.hitbox_radius = self.radius    # ← 新增：碰撞判定半径（默认=视觉半径）
 
+    @classmethod
+    def aimed(cls, boss, player, speed=3):
+        """类方法：创建一颗瞄准玩家的子弹（cls 会随调用方变成对应子类）"""
+        dx = player.x - boss.x
+        dy = player.y - boss.y
+        angle = math.atan2(dy, dx)
+        return cls(boss.x, boss.y, angle, speed)
+
     def update(self):
         self.x += self.vx
         self.y += self.vy
@@ -278,10 +286,7 @@ class AimSpellCard(SpellCard):
         self.fire_timer += 1
         if self.fire_timer >= 30:
             self.fire_timer = 0
-            dx = player.x - boss.x
-            dy = player.y - boss.y
-            angle = math.atan2(dy, dx)
-            enemy_bullets.append(EnemyBullet(boss.x, boss.y, angle, speed=3))
+            enemy_bullets.append(EnemyBullet.aimed(boss, player, speed=3))
 
 
 class CircleSpellCard(SpellCard):
@@ -312,10 +317,7 @@ class SplitSpellCard(SpellCard):
         self.fire_timer += 1
         if self.fire_timer >= 60:                 # 每 60 帧发一颗
             self.fire_timer = 0
-            dx = player.x - boss.x
-            dy = player.y - boss.y
-            angle = math.atan2(dy, dx)
-            enemy_bullets.append(SplitBullet(boss.x, boss.y, angle, speed=2.5))
+            enemy_bullets.append(SplitBullet.aimed(boss, player, speed=2.5))
 
 class BigBulletSpellCard(SpellCard):
     """符卡4：大玉"""
@@ -329,10 +331,7 @@ class BigBulletSpellCard(SpellCard):
         self.fire_timer += 1
         if self.fire_timer >= 90:                 # 每 90 帧发一颗
             self.fire_timer = 0
-            dx = player.x - boss.x
-            dy = player.y - boss.y
-            angle = math.atan2(dy, dx)                  # 空2：瞄准玩家的角度
-            enemy_bullets.append(BigBullet(boss.x, boss.y, angle, speed=1.5))
+            enemy_bullets.append(BigBullet.aimed(boss, player, speed=1.5))
 
 class DenseSpellCard(SpellCard):
     """符卡5：高密度扇形扫射（变向演出）"""
