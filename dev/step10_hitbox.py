@@ -21,13 +21,19 @@ class Player(Entity):
     """玩家类（一张"图纸"）"""
 
     def __init__(self, x, y):
-        # 初始化：创建玩家对象时自动执行，把属性存好
         self.x = x
         self.y = y
-        self.radius = 10
+        self.radius = 15           # 视觉模型半径（大圆）
+        self.hitbox_radius = 3     # 判定点半径（小点，真正会受伤的）
+        self.hp = 3                # 生命值
+        self.respawn_timer = 0     # 0=正常，>0=重生动画中
 
     def update(self, keys):
-        """根据按下的键移动玩家（并限制边界）"""
+        # 重生动画期间：只往上飞，不响应按键
+        if self.respawn_timer > 0:
+            self.respawn_timer -= 1
+            self.y -= 4
+            return                    # 提前返回，跳过下面的移动代码
         SPEED = 4
         if "Left" in keys or "a" in keys:  self.x -= SPEED
         if "Right" in keys or "d" in keys: self.x += SPEED
@@ -42,7 +48,10 @@ class Player(Entity):
         canvas.create_oval(self.x - self.radius, self.y - self.radius,
                            self.x + self.radius, self.y + self.radius,
                            fill="#2563A4")
-
+        # 判定点：灰白色小点（真实受击框）
+        canvas.create_oval(self.x - self.hitbox_radius, self.y - self.hitbox_radius,
+                           self.x + self.hitbox_radius, self.y + self.hitbox_radius,
+                           fill="#cccccc")
 
 class Bullet(Entity):
     def __init__(self, x, y):
@@ -159,6 +168,20 @@ class Game:
 
         for eb in self.enemy_bullets:
             eb.update()
+
+        # ---- 敌弹打中判定点：玩家死亡 ----
+        for eb in self.enemy_bullets:
+            dx = eb.x - self.player.x
+            dy = eb.y - self.player.y
+            if dx*dx + dy*dy < (eb.radius + self.player.hitbox_radius) ** 2:   # 空2：玩家的判定点半径
+                self.player.hp -= 1
+                self.player.x = 240
+                self.player.y = 680               # 移到屏幕底部外
+                self.player.respawn_timer = 90    # 进入 90 帧重生动画
+                self.enemy_bullets.clear()        # 清空所有敌弹
+                self.bullets.clear()              # 清空玩家子弹
+                break
+          
         self.enemy_bullets = [eb for eb in self.enemy_bullets if eb.alive]
 
     def draw(self):
