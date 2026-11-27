@@ -149,21 +149,24 @@ class EnemyBullet(Entity):
 class SplitBullet(EnemyBullet):
     """分裂子弹：飞行一段距离后分裂成 3 颗小子弹"""
 
-    def __init__(self, x, y, angle, speed=2.5):
+    def __init__(self, x, y, angle, speed=2.5, splits_left=2):
         super().__init__(x, y, angle, speed)
         self.speed = speed
-        self.distance_traveled = 0    # 已飞行距离
-        self.has_split = False        # 是否已分裂
+        self.splits_left = splits_left   # 还能再分裂几次
+        self.distance_traveled = 0       # 已飞行距离
+        self.has_split = False           # 是否已分裂
 
     def update(self):
         self.distance_traveled += self.speed    # 累加飞行距离
         super().update()                         # 调用父类：移动 + 出屏判定
-        # 飞够 100 距离且没分裂过 → 分裂
-        if self.distance_traveled > 100 and not self.has_split:
+        # 飞够 100 距离 + 还有分裂次数 + 本次没分裂过 → 分裂
+        if self.splits_left > 0 and self.distance_traveled > 100 and not self.has_split:
             self.has_split = True
             self.alive = False                   # 母体消失
             angle = math.atan2(self.vy, self.vx)  # 当前飞行方向
-            return [EnemyBullet(self.x, self.y, angle + i * 0.35, speed=2.5) for i in [-1, 0, 1]]  # 空1：返回 3 颗子子弹（±0.35 弧度，speed=2.5）
+            # 子体继承「剩余分裂次数 - 1」
+            return [SplitBullet(self.x, self.y, angle + i * 0.35, speed=2.5,
+                                splits_left=self.splits_left - 1) for i in [-1, 0, 1]]
         return []                                # 没分裂：返回空列表
 
 class SpellCard:
