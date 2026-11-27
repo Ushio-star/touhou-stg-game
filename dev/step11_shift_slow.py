@@ -27,6 +27,7 @@ class Player(Entity):
         self.hitbox_radius = 3     # 判定点半径（小点，真正会受伤的）
         self.hp = 3                # 生命值
         self.respawn_timer = 0     # 0=正常，>0=重生动画中
+        self.slow = False          # ← 新增：是否低速移动
 
     def update(self, keys):
         # 重生动画期间：只往上飞，不响应按键
@@ -34,30 +35,44 @@ class Player(Entity):
             self.respawn_timer -= 1
             self.y -= 4
             return                    # 提前返回，跳过下面的移动代码
-        SPEED = 4
-        if "Left" in keys or "a" in keys:  self.x -= SPEED
-        if "Right" in keys or "d" in keys: self.x += SPEED
-        if "Up" in keys or "w" in keys:    self.y -= SPEED
-        if "Down" in keys or "s" in keys:  self.y += SPEED
-        # 边界限制：用 max/min 把坐标夹在屏幕内
+        # 常速（小写 WASD）
+        NORMAL = 4
+        SLOW = 2
+        if "a" in keys: self.x -= NORMAL
+        if "d" in keys: self.x += NORMAL
+        if "w" in keys: self.y -= NORMAL
+        if "s" in keys: self.y += NORMAL
+        # 低速（大写 = Shift + 字母）
+        if "A" in keys: self.x -= SLOW
+        if "D" in keys: self.x += SLOW
+        if "W" in keys: self.y -= SLOW
+        if "S" in keys: self.y += SLOW
+        # 是否低速（给半透明和弹幕变窄用）
+        self.slow = "A" in keys or "D" in keys or "W" in keys or "S" in keys  # 空1：判断是否有大写 WASD
+        # 边界限制
         self.x = max(self.radius, min(480 - self.radius, self.x))
         self.y = max(self.radius, min(640 - self.radius, self.y))
 
     def draw(self, canvas):
-        """把玩家画到画布上"""
-        canvas.create_oval(self.x - self.radius, self.y - self.radius,
-                           self.x + self.radius, self.y + self.radius,
-                           fill="#2563A4")
+        if self.slow:
+            canvas.create_oval(self.x - self.radius, self.y - self.radius,
+                               self.x + self.radius, self.y + self.radius,
+                               fill="#2563A4", stipple="gray50")   # 空2：stipple 伪透明
+        else:
+            canvas.create_oval(self.x - self.radius, self.y - self.radius,
+                               self.x + self.radius, self.y + self.radius,
+                               fill="#2563A4")
+        # （下面的判定点小圆保持不变）
         # 判定点：灰白色小点（真实受击框）
         canvas.create_oval(self.x - self.hitbox_radius, self.y - self.hitbox_radius,
                            self.x + self.hitbox_radius, self.y + self.hitbox_radius,
                            fill="#cccccc")
 
 class Bullet(Entity):
-    def __init__(self, x, y):
+    def __init__(self, x, y, thin=False):
         self.x = x
         self.y = y
-        self.radius = 3
+        self.radius = 1.5 if thin else 3
         self.alive = True        # 子弹"活着"吗？（飞出屏幕就"死"）
 
     def update(self):
@@ -136,7 +151,11 @@ class Game:
         self.keys.add(event.keysym)
 
     def on_release(self, event):
-        self.keys.discard(event.keysym)
+        key = event.keysym
+        self.keys.discard(key)
+        if len(key) == 1:               # 单个字母：大小写都删，防止卡键
+            self.keys.discard(key.lower())
+            self.keys.discard(key.upper())
 
     def update(self):
         self.player.update(self.keys)
@@ -146,7 +165,7 @@ class Game:
         self.fire_timer += 1
         if "space" in self.keys and self.fire_timer >= 8:
             self.fire_timer = 0
-            self.bullets.append(Bullet(self.player.x, self.player.y - 15))
+            self.bullets.append(Bullet(self.player.x, self.player.y - 15, thin=self.player.slow))
 
         for b in self.bullets:
             b.update()
