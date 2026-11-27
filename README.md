@@ -16,7 +16,7 @@
 - [x] 步骤 4：把圆点重构成 Player 类（`dev/step4_player_class.py`）
 - [x] 步骤 5：抽象基类 Entity + 继承（`dev/step5_entity_abstract.py`）
 - [x] 步骤 6：Bullet 类 + Game 类 + 射击（`dev/step6_bullet_class.py`）
-- [ ] 步骤 7：Boss + 血条（`dev/step7_boss_class.py`）← 当前进行
-- [ ] 步骤 8：子弹打中 Boss 掉血（碰撞检测）
+- [x] 步骤 7：Boss + 血条（`dev/step7_boss_class.py`）
+- [x] 步骤 8：子弹打中 Boss 掉血（碰撞检测）（`dev/step8_collision.py`）
 - [ ] 步骤 9：Boss 弹幕 + 符卡
 - [ ] 步骤 10：判定点 / 死亡 / Bomb / 擦弹 / 结算

@@ -109,14 +109,15 @@ class Game:
         self.player.update(self.keys)
         self.boss.update()
 
-        # ---- 按住 空格 连发：每 4 帧发一颗（冷却计时器）----
+        # ---- 按住 空格 连发：每 8 帧发一颗（冷却计时器）----
         self.fire_timer += 1
-        if "space" in self.keys and self.fire_timer >= 4:
+        if "space" in self.keys and self.fire_timer >= 8:
             self.fire_timer = 0
             self.bullets.append(Bullet(self.player.x, self.player.y - 15))
 
         for b in self.bullets:
             b.update()
+
         self.bullets = [b for b in self.bullets if b.alive]
 
     def draw(self):
