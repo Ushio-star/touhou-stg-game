@@ -7,48 +7,61 @@ import tkinter as tk
 import math
 
 # ============================================
-# 【配置区】想调整数值，改这里就行
+# 用户自定义设置（运行后在控制台输入，留空回车 = 用默认值）
 # ============================================
+def ask_int(prompt, default):
+    try:
+        s = input(f"{prompt}（默认 {default}）：").strip()
+        return int(s) if s else default
+    except ValueError:
+        print(f"  输入无效，使用默认值 {default}")
+        return default
+
+def ask_float(prompt, default):
+    try:
+        s = input(f"{prompt}（默认 {default}）：").strip()
+        return float(s) if s else default
+    except ValueError:
+        print(f"  输入无效，使用默认值 {default}")
+        return default
+
+print("========== 东方 STG 弹幕游戏 · 自定义设置 ==========")
+BOSS_MAX_HP = ask_int("Boss 血量", 1000)
+PLAYER_HP = ask_int("玩家生命", 3)
+PLAYER_SPEED_NORMAL = ask_float("玩家移动速度", 4)
+PLAYER_SPEED_SLOW = ask_float("低速移动速度", 2)
+BULLET_DAMAGE = ask_int("玩家子弹伤害", 50)
+FIRE_INTERVAL = ask_int("射击间隔（越大子弹越慢）", 8)
+BOMB_COUNT = ask_int("Bomb 数量", 2)
+BOMB_COOLDOWN_FRAMES = ask_int("Bomb 冷却秒数", 10) * 60
+print("========== 设置完成，游戏启动！ ==========\n")
+
+# ---- 以下为进阶参数（默认即可，想改可改这里）----
 WINDOW_WIDTH = 480
 WINDOW_HEIGHT = 640
 BG_COLOR = "#000011"
-
-PLAYER_SPEED_NORMAL = 4     # 常速
-PLAYER_SPEED_SLOW = 2       # 低速（Shift）
-PLAYER_RADIUS = 15          # 视觉模型半径
-PLAYER_HITBOX_RADIUS = 3    # 判定点半径
-PLAYER_HP = 3               # 初始生命
+PLAYER_RADIUS = 15
+PLAYER_HITBOX_RADIUS = 3
 PLAYER_COLOR = "#2563A4"
-
-BULLET_SPEED = 6            # 玩家子弹速度
-BULLET_RADIUS = 3           # 玩家子弹半径
-BULLET_RADIUS_THIN = 1.5    # 低速时子弹半径
-BULLET_DAMAGE = 50          # 每发子弹伤害
-FIRE_INTERVAL = 8           # 射击间隔（帧）
-FIRE_INTERVAL_FAST = 4      # 攻速加成后的射击间隔
-
-BOSS_MAX_HP = 1000
+BULLET_SPEED = 6
+BULLET_RADIUS = 3
+BULLET_RADIUS_THIN = 1.5
+FIRE_INTERVAL_FAST = 4
 BOSS_RADIUS = 30
 BOSS_COLOR = "#b831ba"
-BOSS_MOVE_AMPLITUDE = 150   # 左右移动幅度
-BOSS_MOVE_SPEED = 0.015     # 移动速度
-
+BOSS_MOVE_AMPLITUDE = 150
+BOSS_MOVE_SPEED = 0.015
 ENEMY_BULLET_RADIUS = 6
 ENEMY_BULLET_COLOR = "#ff66ff"
-
-BOMB_COUNT = 2                  # 初始炸弹数
-BOMB_INVINCIBLE_FRAMES = 180    # 无敌时长（帧）
-BOMB_COOLDOWN_FRAMES = 600      # 冷却时长（帧）
-
-DROP_RATIOS = [0.75, 0.50, 0.25]   # 掉道具的血量比例
+BOMB_INVINCIBLE_FRAMES = 180
+DROP_RATIOS = [0.75, 0.50, 0.25]
 DROP_KINDS = ["shield", "speed", "bomb"]
-SPEED_BOOST_FRAMES = 180           # 攻速道具持续帧数
-
-GRAZE_SCORE_PER = 10      # 每次擦弹得分
-LIFE_SCORE_PER = 10000    # 每条生命得分
-TIME_SCORE_BASE = 60000   # 用时得分基准
-TIME_SCORE_RATE = 10      # 每帧扣分
-BOMB_SCORE_PER = 5000     # 每个炸弹得分
+SPEED_BOOST_FRAMES = 180
+GRAZE_SCORE_PER = 10
+LIFE_SCORE_PER = 10000
+TIME_SCORE_BASE = 60000
+TIME_SCORE_RATE = 10
+BOMB_SCORE_PER = 5000
 GRADE_S = 80000
 GRADE_A = 60000
 GRADE_B = 40000
