@@ -298,6 +298,7 @@ class Game:
         self.fire_timer = 0          # 发射冷却计时器
         self.enemy_bullets = []      # 存放敌方子弹
         self.keys = set()            # 当前按着的键
+        self.game_state = "playing"
         self.root.bind("<KeyPress>", self.on_press)
         self.root.bind("<KeyRelease>", self.on_release)
         self.game_loop()             # 启动循环（必须放在所有属性初始化之后！）
@@ -332,6 +333,8 @@ class Game:
             if distance_squared < (b.radius + self.boss.radius) ** 2:   # 圆心距离² < 半径和²（省开方，更快）
                 b.alive = False                              # 子弹消失
                 self.boss.hp = max(0, self.boss.hp - 50)     # Boss 掉 50 血（最低到 0）
+                if self.boss.hp <= 0:          # Boss 血条归零 → 胜利
+                    self.game_state = "win"
 
         self.bullets = [b for b in self.bullets if b.alive]
 
@@ -349,6 +352,9 @@ class Game:
             dy = eb.y - self.player.y
             if dx*dx + dy*dy < (eb.hitbox_radius + self.player.hitbox_radius) ** 2:
                 self.player.hp -= 1
+                if self.player.hp <= 0:        # 无剩余生命 → 失败
+                    self.game_state = "lose"
+                    break                
                 self.player.x = 240
                 self.player.y = 680               # 移到屏幕底部外
                 self.player.respawn_timer = 90    # 进入 90 帧重生动画
@@ -378,12 +384,20 @@ class Game:
         self.canvas.create_text(470, 30, anchor="ne",
                                 text=self.boss.spell_name,
                                 fill="white", font=("Arial", 14, "bold"))
-        
+        if self.game_state == "win":
+            self.canvas.create_text(240, 320, text="Stage Clear",
+                                    fill="#ffcc00", font=("Arial", 40, "bold"))
+        elif self.game_state == "lose":
+            self.canvas.create_text(240, 320, text="Game Over",
+                                    fill="#ff3333", font=("Arial", 40, "bold"))
+                    
     def game_loop(self):
-        self.canvas.delete("all")    # ① 先清屏
-        self.update()                # ② 统一 update
-        self.draw()                  # ③ 统一 draw
-        self.root.after(16, self.game_loop)
+        self.canvas.delete("all")
+        if self.game_state == "playing":     # 只有游戏中才 update
+            self.update()
+        self.draw()
+        if self.game_state == "playing":     # 只有游戏中才继续预约下一帧
+            self.root.after(16, self.game_loop)
 
 root = tk.Tk()
 root.title("Boss 关")
