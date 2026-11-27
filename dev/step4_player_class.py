@@ -83,9 +83,9 @@ class Game:
     def update(self):
         self.player.update(self.keys)
 
-        # ---- 按住 Z 连发：每 4 帧发一颗（冷却计时器）----
+        # ---- 按住 空格 连发：每 4 帧发一颗（冷却计时器）----
         self.fire_timer += 1
-        if "z" in self.keys and self.fire_timer >= 4:
+        if "space" in self.keys and self.fire_timer >= 4:
             self.fire_timer = 0
             self.bullets.append(Bullet(self.player.x, self.player.y - 15))
 
