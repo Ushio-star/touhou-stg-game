@@ -98,7 +98,7 @@ class Boss(Entity):
         self.alive = True
         self.timer = 0          # 移动计时器
         # 符卡系统
-        self.spell_cards = [AimSpellCard(), CircleSpellCard(), SplitSpellCard()]
+        self.spell_cards = [AimSpellCard(), CircleSpellCard(), SplitSpellCard(), BigBulletSpellCard()]
         self.current = 0                        # 当前符卡下标
         self.spell_name = self.spell_cards[0].name
 
@@ -135,6 +135,7 @@ class EnemyBullet(Entity):
         # 速度分解：把「角度 + 速度」拆成水平 vx 和竖直 vy
         self.vx = math.cos(angle) * speed     # 空1：cos(angle) * speed
         self.vy = math.sin(angle) * speed     # 空2：sin(angle) * speed
+        self.hitbox_radius = self.radius    # ← 新增：碰撞判定半径（默认=视觉半径）
 
     def update(self):
         self.x += self.vx
@@ -169,6 +170,25 @@ class SplitBullet(EnemyBullet):
                                 splits_left=self.splits_left - 1) for i in [-1, 0, 1]]
         return []                                # 没分裂：返回空列表
 
+class BigBullet(EnemyBullet):
+    """大玉：大子弹，只有内部核心有判定"""
+
+    def __init__(self, x, y, angle, speed=2):
+        super().__init__(x, y, angle, speed)
+        self.radius = 48            # 视觉大圆半径
+        self.core_radius = 12        # 内部核心半径
+        self.hitbox_radius = self.core_radius   # 碰撞检测用核心半径（不是 18）
+
+    def draw(self, canvas):
+        # 外圈：白色大圆
+        canvas.create_oval(self.x - self.radius, self.y - self.radius,
+                           self.x + self.radius, self.y + self.radius,
+                           fill="#e96363")
+        # 内部核心：红色小圆（只有它能打中玩家）
+        canvas.create_oval(self.x - self.core_radius, self.y - self.core_radius,
+                           self.x + self.core_radius, self.y + self.core_radius,
+                           fill="#ff3333")   # 空1：用 self.core_radius 画红色核心，fill="#ff3333"
+        
 class SpellCard:
     """符卡基类：一种弹幕模式（像角色的技能）"""
 
@@ -232,6 +252,23 @@ class SplitSpellCard(SpellCard):
             angle = math.atan2(dy, dx)
             enemy_bullets.append(SplitBullet(boss.x, boss.y, angle, speed=2.5))
 
+class BigBulletSpellCard(SpellCard):
+    """符卡4：大玉"""
+
+    def __init__(self):
+        super().__init__("大玉「核心冲击」", duration=300)
+        self.fire_timer = 0
+
+    def update(self, boss, player, enemy_bullets):
+        super().update(boss, player, enemy_bullets)
+        self.fire_timer += 1
+        if self.fire_timer >= 90:                 # 每 90 帧发一颗
+            self.fire_timer = 0
+            dx = player.x - boss.x
+            dy = player.y - boss.y
+            angle = math.atan2(dy, dx)                  # 空2：瞄准玩家的角度
+            enemy_bullets.append(BigBullet(boss.x, boss.y, angle, speed=1.5))
+
 class Game:
     def __init__(self, root):
         self.root = root
@@ -292,7 +329,7 @@ class Game:
         for eb in self.enemy_bullets:
             dx = eb.x - self.player.x
             dy = eb.y - self.player.y
-            if dx*dx + dy*dy < (eb.radius + self.player.hitbox_radius) ** 2:   # 空2：玩家的判定点半径
+            if dx*dx + dy*dy < (eb.hitbox_radius + self.player.hitbox_radius) ** 2:
                 self.player.hp -= 1
                 self.player.x = 240
                 self.player.y = 680               # 移到屏幕底部外
