@@ -98,7 +98,7 @@ class Boss(Entity):
         self.alive = True
         self.timer = 0          # 移动计时器
         # 符卡系统
-        self.spell_cards = [AimSpellCard(), CircleSpellCard()]
+        self.spell_cards = [AimSpellCard(), CircleSpellCard(), SplitSpellCard()]
         self.current = 0                        # 当前符卡下标
         self.spell_name = self.spell_cards[0].name
 
@@ -146,6 +146,25 @@ class EnemyBullet(Entity):
         canvas.create_oval(self.x - self.radius, self.y - self.radius,
                            self.x + self.radius, self.y + self.radius,
                            fill="#ff66ff", outline="white")
+class SplitBullet(EnemyBullet):
+    """分裂子弹：飞行一段距离后分裂成 3 颗小子弹"""
+
+    def __init__(self, x, y, angle, speed=2.5):
+        super().__init__(x, y, angle, speed)
+        self.speed = speed
+        self.distance_traveled = 0    # 已飞行距离
+        self.has_split = False        # 是否已分裂
+
+    def update(self):
+        self.distance_traveled += self.speed    # 累加飞行距离
+        super().update()                         # 调用父类：移动 + 出屏判定
+        # 飞够 100 距离且没分裂过 → 分裂
+        if self.distance_traveled > 100 and not self.has_split:
+            self.has_split = True
+            self.alive = False                   # 母体消失
+            angle = math.atan2(self.vy, self.vx)  # 当前飞行方向
+            return [EnemyBullet(self.x, self.y, angle + i * 0.35, speed=2.5) for i in [-1, 0, 1]]  # 空1：返回 3 颗子子弹（±0.35 弧度，speed=2.5）
+        return []                                # 没分裂：返回空列表
 
 class SpellCard:
     """符卡基类：一种弹幕模式（像角色的技能）"""
@@ -192,6 +211,23 @@ class CircleSpellCard(SpellCard):
             for i in range(12):                          # 12 发一圈
                 angle = i * math.pi / 6                  # 空1：每 30° 一发（用弧度）
                 enemy_bullets.append(EnemyBullet(boss.x, boss.y, angle, speed=2.5))
+
+class SplitSpellCard(SpellCard):
+    """符卡3：分裂弹"""
+
+    def __init__(self):
+        super().__init__("分裂弹「三开花」", duration=300)
+        self.fire_timer = 0
+
+    def update(self, boss, player, enemy_bullets):
+        super().update(boss, player, enemy_bullets)
+        self.fire_timer += 1
+        if self.fire_timer >= 60:                 # 每 60 帧发一颗
+            self.fire_timer = 0
+            dx = player.x - boss.x
+            dy = player.y - boss.y
+            angle = math.atan2(dy, dx)
+            enemy_bullets.append(SplitBullet(boss.x, boss.y, angle, speed=2.5))
 
 class Game:
     def __init__(self, root):
@@ -241,9 +277,13 @@ class Game:
 
         self.bullets = [b for b in self.bullets if b.alive]
 
-        # 更新敌方子弹（让它们飞起来）
+        # 更新敌方子弹（并收集分裂出的子子弹）
+        new_bullets = []
         for eb in self.enemy_bullets:
-            eb.update()
+            children = eb.update()      # 分裂弹会返回子子弹，普通敌弹返回 None
+            if children:
+                new_bullets.extend(children)
+        self.enemy_bullets.extend(new_bullets)
 
         # ---- 敌弹打中判定点：玩家死亡 ----
         for eb in self.enemy_bullets:
