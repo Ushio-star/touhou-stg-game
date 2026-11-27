@@ -33,7 +33,11 @@ PLAYER_SPEED_SLOW = ask_float("低速移动速度", 2)
 BULLET_DAMAGE = ask_int("玩家子弹伤害", 50)
 FIRE_INTERVAL = ask_int("射击间隔（越大子弹越慢）", 8)
 BOMB_COUNT = ask_int("Bomb 数量", 2)
-BOMB_COOLDOWN_FRAMES = ask_int("Bomb 冷却秒数", 10) * 60
+cancel_cooldown = ask_int("是否取消 Bomb 冷却时间（0=取消 1=保留）", 1)
+if cancel_cooldown == 0:
+    BOMB_COOLDOWN_FRAMES = 0          # 取消冷却，炸弹可连放
+else:
+    BOMB_COOLDOWN_FRAMES = ask_int("Bomb 冷却秒数", 10) * 60
 print("========== 设置完成，游戏启动！ ==========\n")
 
 # ---- 以下为进阶参数（默认即可，想改可改这里）----
