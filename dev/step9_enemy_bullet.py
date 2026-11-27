@@ -84,6 +84,28 @@ class Boss(Entity):
                            self.x + self.radius, self.y + self.radius,
                            fill="#b831ba")
 
+class EnemyBullet(Entity):
+    """敌方子弹：朝某个方向飞（继承 Entity）"""
+
+    def __init__(self, x, y, angle, speed=3):
+        self.x = x
+        self.y = y
+        self.radius = 6
+        self.alive = True
+        # 速度分解：把「角度 + 速度」拆成水平 vx 和竖直 vy
+        self.vx = math.cos(angle) * speed     # 空1：cos(angle) * speed
+        self.vy = math.sin(angle) * speed     # 空2：sin(angle) * speed
+
+    def update(self):
+        self.x += self.vx
+        self.y += self.vy
+        if self.x < -20 or self.x > 500 or self.y < -20 or self.y > 660:
+            self.alive = False
+
+    def draw(self, canvas):
+        canvas.create_oval(self.x - self.radius, self.y - self.radius,
+                           self.x + self.radius, self.y + self.radius,
+                           fill="#ff66ff", outline="white")
 
 class Game:
     def __init__(self, root):
@@ -94,6 +116,8 @@ class Game:
         self.boss = Boss(240, 100)
         self.bullets = []            # 存放所有子弹
         self.fire_timer = 0          # 发射冷却计时器
+        self.enemy_bullets = []      # 存放敌方子弹
+        self.boss_fire_timer = 0     # Boss 发射冷却计时器
         self.keys = set()            # 当前按着的键
         self.root.bind("<KeyPress>", self.on_press)
         self.root.bind("<KeyRelease>", self.on_release)
@@ -127,6 +151,15 @@ class Game:
                 self.boss.hp = max(0, self.boss.hp - 50)     # Boss 掉 50 血（最低到 0）
 
         self.bullets = [b for b in self.bullets if b.alive]
+        # ---- Boss 发射自机狙：每 30 帧发一颗 ----
+        self.boss_fire_timer += 1
+        if self.boss_fire_timer >= 30:
+            self.boss_fire_timer = 0
+            self.fire_aimed_bullet()
+
+        for eb in self.enemy_bullets:
+            eb.update()
+        self.enemy_bullets = [eb for eb in self.enemy_bullets if eb.alive]
 
     def draw(self):
         self.player.draw(self.canvas)
@@ -141,12 +174,22 @@ class Game:
         ratio = self.boss.hp / self.boss.max_hp
         self.canvas.create_rectangle(40, 10, 40 + 400 * ratio, 24, fill="#ff4444", outline="")
 
+        # 画敌方子弹
+        for eb in self.enemy_bullets:
+            eb.draw(self.canvas)
+
+
     def game_loop(self):
         self.canvas.delete("all")    # ① 先清屏
         self.update()                # ② 统一 update
         self.draw()                  # ③ 统一 draw
         self.root.after(16, self.game_loop)
 
+    def fire_aimed_bullet(self):
+        dx = self.player.x - self.boss.x
+        dy = self.player.y - self.boss.y
+        angle = math.atan2(dy, dx)    # 空3：math.atan2(dy, dx)
+        self.enemy_bullets.append(EnemyBullet(self.boss.x, self.boss.y, angle, speed=3))
 
 root = tk.Tk()
 root.title("Boss 关")
