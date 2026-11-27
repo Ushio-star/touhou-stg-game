@@ -283,7 +283,7 @@ class DenseSpellCard(SpellCard):
         sweep = math.pi / 2 + math.sin(self.timer * 0.04) * 0.7  # 空1：朝下 + 左右摆动
         if self.fire_timer >= 12:            # 每 12 帧一波（高密度）
             self.fire_timer = 0
-            for i in range(-5, 6):          # 15 发铺成扇形
+            for i in range(-5, 6):          # 11 发铺成扇形
                 angle = sweep + i * math.pi / 12  # 空2：sweep + 偏移
                 enemy_bullets.append(EnemyBullet(boss.x, boss.y, angle, speed=3))
 
