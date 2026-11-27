@@ -77,7 +77,7 @@ class Boss(Entity):
     def update(self):
         self.timer += 1
         # 中心 240，左右幅度 150（最左 90，最右 390）；sin 让移动平滑
-        self.x = 240 + 150 * math.sin(self.timer * 0.03)
+        self.x = 240 + 150 * math.sin(self.timer * 0.015)
 
     def draw(self, canvas):
         canvas.create_oval(self.x - self.radius, self.y - self.radius,
