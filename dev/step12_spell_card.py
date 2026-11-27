@@ -97,11 +97,27 @@ class Boss(Entity):
         self.max_hp = 1000      # 最大血量
         self.alive = True
         self.timer = 0          # 移动计时器
+        # 符卡系统
+        self.spell_cards = [AimSpellCard(), CircleSpellCard()]
+        self.current = 0                        # 当前符卡下标
+        self.spell_name = self.spell_cards[0].name
 
-    def update(self):
+    def update(self, player, enemy_bullets):
         self.timer += 1
-        # 中心 240，左右幅度 150（最左 90，最右 390）；sin 让移动平滑
         self.x = 240 + 150 * math.sin(self.timer * 0.015)
+
+        # 玩家重生期间，符卡暂停（休整期）
+        if player.respawn_timer > 0:
+            return
+
+        # 固定顺序、按时间切换符卡
+        card = self.spell_cards[self.current]
+        if card.timer >= card.duration:
+            self.current =(self.current + 1) % len(self.spell_cards)           # 空2：切到下一个，用取模实现循环
+            card = self.spell_cards[self.current]
+            card.timer = 0
+        self.spell_name = card.name
+        card.update(self, player, enemy_bullets)    
 
     def draw(self, canvas):
         canvas.create_oval(self.x - self.radius, self.y - self.radius,
@@ -131,6 +147,52 @@ class EnemyBullet(Entity):
                            self.x + self.radius, self.y + self.radius,
                            fill="#ff66ff", outline="white")
 
+class SpellCard:
+    """符卡基类：一种弹幕模式（像角色的技能）"""
+
+    def __init__(self, name, duration):
+        self.name = name          # 符卡名
+        self.duration = duration  # 持续多少帧
+        self.timer = 0            # 本符卡已进行几帧
+
+    def update(self, boss, player, enemy_bullets):
+        """发射弹幕（子类重写），顺便计时"""
+        self.timer += 1
+
+class AimSpellCard(SpellCard):
+    """符卡1：自机狙（瞄准玩家）"""
+
+    def __init__(self):
+        super().__init__("自机狙「瞄准射击」", duration=300)   # 300帧 = 5秒
+        self.fire_timer = 0
+
+    def update(self, boss, player, enemy_bullets):
+        super().update(boss, player, enemy_bullets)   # 调用父类计时
+        self.fire_timer += 1
+        if self.fire_timer >= 30:
+            self.fire_timer = 0
+            dx = player.x - boss.x
+            dy = player.y - boss.y
+            angle = math.atan2(dy, dx)
+            enemy_bullets.append(EnemyBullet(boss.x, boss.y, angle, speed=3))
+
+
+class CircleSpellCard(SpellCard):
+    """符卡2：圆形弹（向四周发射一圈）"""
+
+    def __init__(self):
+        super().__init__("圆形弹「全向开花」", duration=300)
+        self.fire_timer = 0
+
+    def update(self, boss, player, enemy_bullets):
+        super().update(boss, player, enemy_bullets)
+        self.fire_timer += 1
+        if self.fire_timer >= 40:
+            self.fire_timer = 0
+            for i in range(12):                          # 12 发一圈
+                angle = i * math.pi / 6                  # 空1：每 30° 一发（用弧度）
+                enemy_bullets.append(EnemyBullet(boss.x, boss.y, angle, speed=2.5))
+
 class Game:
     def __init__(self, root):
         self.root = root
@@ -141,7 +203,6 @@ class Game:
         self.bullets = []            # 存放所有子弹
         self.fire_timer = 0          # 发射冷却计时器
         self.enemy_bullets = []      # 存放敌方子弹
-        self.boss_fire_timer = 0     # Boss 发射冷却计时器
         self.keys = set()            # 当前按着的键
         self.root.bind("<KeyPress>", self.on_press)
         self.root.bind("<KeyRelease>", self.on_release)
@@ -159,7 +220,7 @@ class Game:
 
     def update(self):
         self.player.update(self.keys)
-        self.boss.update()
+        self.boss.update(self.player, self.enemy_bullets)
 
         # ---- 按住 空格 连发：每 8 帧发一颗（冷却计时器）----
         self.fire_timer += 1
@@ -179,13 +240,8 @@ class Game:
                 self.boss.hp = max(0, self.boss.hp - 50)     # Boss 掉 50 血（最低到 0）
 
         self.bullets = [b for b in self.bullets if b.alive]
-        # ---- Boss 发射自机狙：玩家重生期间不发弹，到位后继续 ----
-        if self.player.respawn_timer <= 0:
-            self.boss_fire_timer += 1
-            if self.boss_fire_timer >= 30:
-                self.boss_fire_timer = 0
-                self.fire_aimed_bullet()
 
+        # 更新敌方子弹（让它们飞起来）
         for eb in self.enemy_bullets:
             eb.update()
 
@@ -200,7 +256,6 @@ class Game:
                 self.player.respawn_timer = 90    # 进入 90 帧重生动画
                 self.enemy_bullets.clear()        # 清空所有敌弹
                 self.bullets.clear()              # 清空玩家子弹
-                self.boss_fire_timer = 0          # 重置 Boss 发射计时器
                 break
           
         self.enemy_bullets = [eb for eb in self.enemy_bullets if eb.alive]
@@ -222,18 +277,15 @@ class Game:
         for eb in self.enemy_bullets:
             eb.draw(self.canvas)
 
-
+        self.canvas.create_text(470, 30, anchor="ne",
+                                text=self.boss.spell_name,
+                                fill="white", font=("Arial", 14, "bold"))
+        
     def game_loop(self):
         self.canvas.delete("all")    # ① 先清屏
         self.update()                # ② 统一 update
         self.draw()                  # ③ 统一 draw
         self.root.after(16, self.game_loop)
-
-    def fire_aimed_bullet(self):
-        dx = self.player.x - self.boss.x
-        dy = self.player.y - self.boss.y
-        angle = math.atan2(dy, dx)    # 空3：math.atan2(dy, dx)
-        self.enemy_bullets.append(EnemyBullet(self.boss.x, self.boss.y, angle, speed=3))
 
 root = tk.Tk()
 root.title("Boss 关")
