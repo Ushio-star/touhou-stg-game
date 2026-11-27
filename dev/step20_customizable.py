@@ -13,14 +13,16 @@ WINDOW_WIDTH = 480
 WINDOW_HEIGHT = 640
 BG_COLOR = "#000011"
 
-PLAYER_SPEED_NORMAL = PLAYER_SPEED_NORMAL     # 常速
-PLAYER_SPEED_SLOW = PLAYER_SPEED_SLOW       # 低速（Shift）
+PLAYER_SPEED_NORMAL = 4     # 常速
+PLAYER_SPEED_SLOW = 2       # 低速（Shift）
 PLAYER_RADIUS = 15          # 视觉模型半径
 PLAYER_HITBOX_RADIUS = 3    # 判定点半径
 PLAYER_HP = 3               # 初始生命
 PLAYER_COLOR = "#2563A4"
 
 BULLET_SPEED = 6            # 玩家子弹速度
+BULLET_RADIUS = 3           # 玩家子弹半径
+BULLET_RADIUS_THIN = 1.5    # 低速时子弹半径
 BULLET_DAMAGE = 50          # 每发子弹伤害
 FIRE_INTERVAL = 8           # 射击间隔（帧）
 FIRE_INTERVAL_FAST = 4      # 攻速加成后的射击间隔
@@ -82,8 +84,8 @@ class Player(Entity):
             self.y -= 4
             return                    # 提前返回，跳过下面的移动代码
         # 常速（小写 WASD）
-        NORMAL = 4
-        SLOW = 2
+        NORMAL = PLAYER_SPEED_NORMAL
+        SLOW = PLAYER_SPEED_SLOW
         if "a" in keys: self.x -= NORMAL
         if "d" in keys: self.x += NORMAL
         if "w" in keys: self.y -= NORMAL
@@ -118,7 +120,7 @@ class Bullet(Entity):
     def __init__(self, x, y, thin=False):
         self.x = x
         self.y = y
-        self.radius = 1.5 if thin else BULLET_SPEED
+        self.radius = BULLET_RADIUS_THIN if thin else BULLET_RADIUS
         self.alive = True        # 子弹"活着"吗？（飞出屏幕就"死"）
 
     def update(self):
