@@ -38,6 +38,10 @@ if cancel_cooldown == 0:
     BOMB_COOLDOWN_FRAMES = 0          # 取消冷却，炸弹可连放
 else:
     BOMB_COOLDOWN_FRAMES = ask_int("Bomb 冷却秒数", 10) * 60
+SPLIT_COUNT = ask_int("分裂弹分裂次数", 2)
+BIG_BULLET_COUNT = ask_int("大玉每次发射数量", 1)
+AIMED_BULLET_SPEED = ask_float("自机狙子弹速度", 3)
+DENSE_FIRE_INTERVAL = ask_int("高密度弹幕射击间隔（帧，越小越密）", 12)
 print("========== 设置完成，游戏启动！ ==========\n")
 
 # ---- 以下为进阶参数（默认即可，想改可改这里）----
@@ -223,7 +227,7 @@ class EnemyBullet(Entity):
 class SplitBullet(EnemyBullet):
     """分裂子弹：飞行一段距离后分裂成 3 颗小子弹"""
 
-    def __init__(self, x, y, angle, speed=2.5, splits_left=2):
+    def __init__(self, x, y, angle, speed=2.5, splits_left=SPLIT_COUNT):
         super().__init__(x, y, angle, speed)
         self.speed = speed
         self.splits_left = splits_left   # 还能再分裂几次
@@ -286,7 +290,7 @@ class AimSpellCard(SpellCard):
         self.fire_timer += 1
         if self.fire_timer >= 30:
             self.fire_timer = 0
-            enemy_bullets.append(EnemyBullet.aimed(boss, player, speed=3))
+            enemy_bullets.append(EnemyBullet.aimed(boss, player, speed=AIMED_BULLET_SPEED))
 
 
 class CircleSpellCard(SpellCard):
@@ -331,7 +335,12 @@ class BigBulletSpellCard(SpellCard):
         self.fire_timer += 1
         if self.fire_timer >= 90:                 # 每 90 帧发一颗
             self.fire_timer = 0
-            enemy_bullets.append(BigBullet.aimed(boss, player, speed=1.5))
+            for i in range(BIG_BULLET_COUNT):
+                offset = (i - (BIG_BULLET_COUNT - 1) / 2) * 0.2   # 扇形错开
+                dx = player.x - boss.x
+                dy = player.y - boss.y
+                angle = math.atan2(dy, dx) + offset
+                enemy_bullets.append(BigBullet(boss.x, boss.y, angle, speed=1.5))
 
 class DenseSpellCard(SpellCard):
     """符卡5：高密度扇形扫射（变向演出）"""
@@ -345,7 +354,7 @@ class DenseSpellCard(SpellCard):
         self.fire_timer += 1
         # 扫射中心角度：朝下（pi/2），左右来回摆动 = 变向
         sweep = math.pi / 2 + math.sin(self.timer * 0.04) * 0.7  # 空1：朝下 + 左右摆动
-        if self.fire_timer >= 12:            # 每 12 帧一波（高密度）
+        if self.fire_timer >= DENSE_FIRE_INTERVAL:            # 每 12 帧一波（高密度）
             self.fire_timer = 0
             for i in range(-5, 6):          # 11 发铺成扇形
                 angle = sweep + i * math.pi / 12  # 空2：sweep + 偏移
