@@ -387,9 +387,6 @@ class Game:
         for eb in self.enemy_bullets:
             eb.draw(self.canvas)
 
-        self.canvas.create_text(470, 30, anchor="ne",
-                                text=self.boss.spell_name,
-                                fill="white", font=("Arial", 14, "bold"))
         if self.game_state == "win":
             self.canvas.create_text(240, 320, text="Stage Clear",
                                     fill="#ffcc00", font=("Arial", 40, "bold"))

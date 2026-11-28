@@ -472,9 +472,6 @@ class Game:
         for eb in self.enemy_bullets:
             eb.draw(self.canvas)
 
-        self.canvas.create_text(470, 30, anchor="ne",
-                                text=self.boss.spell_name,
-                                fill="white", font=("Arial", 14, "bold"))
         # 画掉落道具
         for it in self.items:
             it.draw(self.canvas)
