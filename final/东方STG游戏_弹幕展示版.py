@@ -405,6 +405,8 @@ class Game:
         self.keys.add(event.keysym)
         if event.keysym.lower() == "x":   # 按 X 触发 Bomb（大小写都认）
             self.try_bomb()
+        if event.keysym.lower() == "o":   # 按 O 直接进入胜利结算
+            self.game_state = "win"
 
     def on_release(self, event):
         key = event.keysym
