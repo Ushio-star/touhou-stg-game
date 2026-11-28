@@ -272,8 +272,8 @@ class BigBulletSpellCard(SpellCard):
         self.fire_timer += 1
         if self.fire_timer >= 90:                 # 每 90 帧发一颗
             self.fire_timer = 0
-            for i in range(10):
-                offset = (i - 4.5) * 0.12   # 10 颗大玉扇形散开
+            for i in range(2):
+                offset = (i - 0.5) * 0.2   # 2 颗大玉扇形散开
                 dx = player.x - boss.x
                 dy = player.y - boss.y
                 angle = math.atan2(dy, dx) + offset
