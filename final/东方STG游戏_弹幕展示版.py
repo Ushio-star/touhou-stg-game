@@ -99,7 +99,7 @@ class Boss(Entity):
         self.alive = True
         self.timer = 0          # 移动计时器
         # 符卡系统
-        self.spell_cards = [AimSpellCard(), CircleSpellCard(), SplitSpellCard(),BigBulletSpellCard(), DenseSpellCard()]
+        self.spell_cards = [AimSpellCard(), CircleSpellCard(), SplitSpellCard(), BigBulletSpellCard(), DenseSpellCard(), SpiralSpellCard(), RingSpellCard(), WaveSpellCard()]
         self.current = 0                        # 当前符卡下标
         self.spell_name = self.spell_cards[0].name
 
@@ -296,6 +296,58 @@ class DenseSpellCard(SpellCard):
             for i in range(-5, 6):          # 11 发铺成扇形
                 angle = sweep + i * math.pi / 12  # 空2：sweep + 偏移
                 enemy_bullets.append(EnemyBullet(boss.x, boss.y, angle, speed=6))
+
+class SpiralSpellCard(SpellCard):
+    """符卡6：螺旋弹"""
+    def __init__(self):
+        super().__init__("螺旋「旋转弹幕」", duration=300)
+        self.fire_timer = 0
+        self.spiral_angle = 0
+
+    def update(self, boss, player, enemy_bullets):
+        super().update(boss, player, enemy_bullets)
+        self.fire_timer += 1
+        self.spiral_angle += 0.25    # 角度持续旋转
+        if self.fire_timer >= 3:
+            self.fire_timer = 0
+            # 每次发两颗（相对方向），形成旋转螺旋
+            enemy_bullets.append(EnemyBullet(boss.x, boss.y, self.spiral_angle, speed=4))
+            enemy_bullets.append(EnemyBullet(boss.x, boss.y, self.spiral_angle + math.pi, speed=4))
+
+
+class RingSpellCard(SpellCard):
+    """符卡7：环形弹"""
+    def __init__(self):
+        super().__init__("环形「同心圆」", duration=300)
+        self.fire_timer = 0
+        self.ring_offset = 0
+
+    def update(self, boss, player, enemy_bullets):
+        super().update(boss, player, enemy_bullets)
+        self.fire_timer += 1
+        self.ring_offset += 0.08    # 每圈错开一点
+        if self.fire_timer >= 8:
+            self.fire_timer = 0
+            for i in range(24):     # 24 发一圈
+                angle = i * (2 * math.pi / 24) + self.ring_offset
+                enemy_bullets.append(EnemyBullet(boss.x, boss.y, angle, speed=3))
+
+
+class WaveSpellCard(SpellCard):
+    """符卡8：波浪弹"""
+    def __init__(self):
+        super().__init__("波浪「浪花」", duration=300)
+        self.fire_timer = 0
+
+    def update(self, boss, player, enemy_bullets):
+        super().update(boss, player, enemy_bullets)
+        self.fire_timer += 1
+        if self.fire_timer >= 6:
+            self.fire_timer = 0
+            for i in range(11):     # 11 发波浪
+                angle = math.pi / 2 + math.sin(self.timer * 0.05 + i * 0.4) * 0.7
+                enemy_bullets.append(EnemyBullet(boss.x, boss.y, angle, speed=3.5))
+
 
 class Item(Entity):
     """掉落道具：不同类型有不同效果"""
