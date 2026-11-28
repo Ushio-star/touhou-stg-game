@@ -222,24 +222,29 @@ class AimSpellCard(SpellCard):
         self.fire_timer += 1
         if self.fire_timer >= 30:
             self.fire_timer = 0
-            enemy_bullets.append(EnemyBullet.aimed(boss, player, speed=5))
+            for i in range(3):
+                offset = (i - 1) * 0.12   # 3 发小扇形
+                dx = player.x - boss.x
+                dy = player.y - boss.y
+                angle = math.atan2(dy, dx) + offset
+                enemy_bullets.append(EnemyBullet(boss.x, boss.y, angle, speed=10))
 
 
 class CircleSpellCard(SpellCard):
     """符卡2：圆形弹（向四周发射一圈）"""
 
     def __init__(self):
-        super().__init__("圆形弹「全向开花」", duration=300)
+        super().__init__("圆形弹「全向开花」", duration=600)
         self.fire_timer = 0
 
     def update(self, boss, player, enemy_bullets):
         super().update(boss, player, enemy_bullets)
         self.fire_timer += 1
-        if self.fire_timer >= 40:
+        if self.fire_timer >= 20:
             self.fire_timer = 0
-            for i in range(16):                          # 12 发一圈
-                angle = i * math.pi / 8                  # 空1：每 30° 一发（用弧度）
-                enemy_bullets.append(EnemyBullet(boss.x, boss.y, angle, speed=2.5))
+            for i in range(32):                          # 12 发一圈
+                angle = i * math.pi / 16                  # 空1：每 30° 一发（用弧度）
+                enemy_bullets.append(EnemyBullet(boss.x, boss.y, angle, speed=5))
 
 class SplitSpellCard(SpellCard):
     """符卡3：分裂弹"""
@@ -253,7 +258,7 @@ class SplitSpellCard(SpellCard):
         self.fire_timer += 1
         if self.fire_timer >= 60:                 # 每 60 帧发一颗
             self.fire_timer = 0
-            enemy_bullets.append(SplitBullet.aimed(boss, player, speed=2.5))
+            enemy_bullets.append(SplitBullet.aimed(boss, player, speed=5))
 
 class BigBulletSpellCard(SpellCard):
     """符卡4：大玉"""
@@ -267,18 +272,18 @@ class BigBulletSpellCard(SpellCard):
         self.fire_timer += 1
         if self.fire_timer >= 90:                 # 每 90 帧发一颗
             self.fire_timer = 0
-            for i in range(6):
-                offset = (i - 2.5) * 0.2   # 6 颗大玉扇形散开
+            for i in range(10):
+                offset = (i - 4.5) * 0.12   # 10 颗大玉扇形散开
                 dx = player.x - boss.x
                 dy = player.y - boss.y
                 angle = math.atan2(dy, dx) + offset
-                enemy_bullets.append(BigBullet(boss.x, boss.y, angle, speed=1.5))
+                enemy_bullets.append(BigBullet(boss.x, boss.y, angle, speed=4))
 
 class DenseSpellCard(SpellCard):
     """符卡5：高密度扇形扫射（变向演出）"""
 
     def __init__(self):
-        super().__init__("高密度「扇形扫射」", duration=300)
+        super().__init__("高密度「扇形扫射」", duration=600)
         self.fire_timer = 0
 
     def update(self, boss, player, enemy_bullets):
@@ -286,11 +291,11 @@ class DenseSpellCard(SpellCard):
         self.fire_timer += 1
         # 扫射中心角度：朝下（pi/2），左右来回摆动 = 变向
         sweep = math.pi / 2 + math.sin(self.timer * 0.04) * 0.7  # 空1：朝下 + 左右摆动
-        if self.fire_timer >= 4:            # 每 12 帧一波（高密度）
+        if self.fire_timer >= 2:            # 每 12 帧一波（高密度）
             self.fire_timer = 0
             for i in range(-5, 6):          # 11 发铺成扇形
                 angle = sweep + i * math.pi / 12  # 空2：sweep + 偏移
-                enemy_bullets.append(EnemyBullet(boss.x, boss.y, angle, speed=3))
+                enemy_bullets.append(EnemyBullet(boss.x, boss.y, angle, speed=6))
 
 class Item(Entity):
     """掉落道具：不同类型有不同效果"""

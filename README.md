@@ -18,8 +18,8 @@
 - [x] 步骤 6：Bullet 类 + Game 类 + 射击（`dev/step6_bullet_class.py`）
 - [x] 步骤 7：Boss + 血条（`dev/step7_boss_class.py`）
 - [x] 步骤 8：子弹打中 Boss 掉血（碰撞检测）（`dev/step8_collision.py`）
-- [ ] 步骤 9：Boss 弹幕 + 符卡
-- [ ] 步骤 10：判定点 / 死亡 / Bomb / 擦弹 / 结算
+- [x] 步骤 9：Boss 弹幕 + 符卡
+- [x] 步骤 10：判定点 / 死亡 / Bomb / 擦弹 / 结算
 
 ## 最终展示（final/）
 
