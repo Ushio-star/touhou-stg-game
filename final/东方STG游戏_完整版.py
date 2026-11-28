@@ -58,7 +58,7 @@ class Player(Entity):
         if self.slow:
             canvas.create_oval(self.x - self.radius, self.y - self.radius,
                                self.x + self.radius, self.y + self.radius,
-                               fill="#2563A4", stipple="gray50")   # 空2：stipple 伪透明
+                               fill="#2563A4", stipple="gray25", outline="#aaccff")   # 空2：stipple 伪透明
         else:
             canvas.create_oval(self.x - self.radius, self.y - self.radius,
                                self.x + self.radius, self.y + self.radius,
