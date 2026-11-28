@@ -55,7 +55,7 @@ class Player(Entity):
         if "W" in keys: self.y -= SLOW
         if "S" in keys: self.y += SLOW
         # 是否低速（给半透明和弹幕变窄用）
-        self.slow = "A" in keys or "D" in keys or "W" in keys or "S" in keys  # 空1：判断是否有大写 WASD
+        self.slow = "Shift_L" in keys or "Shift_R" in keys  # 空1：判断是否有大写 WASD
         # 边界限制
         self.x = max(self.radius, min(480 - self.radius, self.x))
         self.y = max(self.radius, min(640 - self.radius, self.y))
